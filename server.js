@@ -103,7 +103,7 @@ app.get('/api/client/orders/:userId', clientAuth, async (req, res) => {
 // ROTA DE CHECKOUT REAL
 app.post('/api/checkout', async (req, res) => {
     const { customerInfo, cart, total, userId } = req.body;
-    const siteUrl = `http://localhost:${port}`;
+    const siteUrl = `https://queen-by-store.onrender.com`;
 
     try {
         for (const item of cart) {
@@ -235,5 +235,6 @@ app.patch('/api/admin/products/:id', adminAuth, async (req, res) => {
 app.get('/api/admin/orders', adminAuth, async (req, res) => { const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false }); res.json(data); });
 app.patch('/api/admin/orders/:id', adminAuth, async (req, res) => { await supabase.from('orders').update({ status: req.body.status }).eq('id', req.params.id); res.json({ success: true }); });
 app.delete('/api/admin/orders/:id', adminAuth, async (req, res) => { await supabase.from('orders').delete().eq('id', req.params.id); res.json({ success: true }); });
+
 
 app.listen(port, () => console.log(`SERVIDOR E SITE RODANDO EM: http://localhost:${port}`));
