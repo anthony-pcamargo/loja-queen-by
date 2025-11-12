@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boutique Queen By | Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: { 'sans': ['"Plus Jakarta Sans"', 'sans-serif'], 'serif': ['"Playfair Display"', 'serif'] },
+                extend: {
+                    colors: { primary: '#0f0f0f', accent: '#9d174d', cream: '#fff9f5', gold: '#d4af37' },
+                    letterSpacing: { 'widest': '.25em', 'ultra': '0.5em' },
+                    animation: { 'ken-burns': 'kenBurns 25s infinite alternate ease-in-out', 'fade-up-slow': 'fadeUp 1.2s cubic-bezier(0.2, 1, 0.3, 1) forwards' },
+                    keyframes: { kenBurns: { '0%': { transform: 'scale(1)' }, '100%': { transform: 'scale(1.15)' } }, fadeUp: { from: { opacity: 0, transform: 'translateY(40px)' }, to: { opacity: 1, transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+    <style>
+        .modal-transition { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 1s cubic-bezier(0.2, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        body { background-color: #fff9f5; color: #0f0f0f; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        .checkout-input-luxe { @apply w-full bg-transparent border-b-2 border-stone-300 px-1 py-3 font-sans text-base font-medium text-primary placeholder-stone-400 outline-none transition-all duration-300 focus:border-accent; }
+        
+        .input-wrapper { @apply relative; }
+        .input-wrapper:focus-within .input-icon { @apply text-accent; }
+        .input-icon { @apply absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5 transition-all duration-300; }
+        
+        .checkout-input-signature { 
+            @apply w-full bg-white border border-stone-300 px-4 py-4 pl-12 rounded-lg font-sans text-sm font-medium text-primary placeholder-stone-400 
+            outline-none transition-all duration-300 
+            focus:border-accent focus:ring-2 focus:ring-accent/20;
+        }
+        
+        .checkout-label { @apply block text-xs font-bold text-primary/60 uppercase tracking-widest mb-3; }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="fixed top-8 right-8 z-[110] transition-all duration-700 opacity-0 translate-y-[-20px] pointer-events-none bg-primary text-cream px-8 py-4 text-xs uppercase tracking-widest font-bold flex items-center gap-4 shadow-2xl border-l-4 border-accent"></div>
+    <div id="overlay" onclick="closeModals()" class="fixed inset-0 bg-[#0f0f0f]/40 backdrop-blur-md z-50 opacity-0 pointer-events-none modal-transition"></div>
+
+    <header class="fixed w-full top-0 z-40 transition-all duration-500 bg-white shadow-sm" id="main-header">
+        <div class="bg-primary text-cream py-2 text-[9px] uppercase tracking-ultra font-bold text-center hidden md:block">Frete Grátis para todo Brasil</div>
+        <div class="border-b border-primary/5 transition-all duration-500" id="header-bg">
+            <div class="container mx-auto px-8 h-24 flex items-center justify-between" id="header-container">
+                <div class="flex items-center gap-16">
+                    <div class="cursor-pointer group relative" onclick="goHome()">
+                        <span class="font-serif text-3xl md:text-4xl tracking-wider font-black italic relative z-10 transition-colors duration-500 text-primary">Queen By</span>
+                    </div>
+                    <nav class="hidden lg:flex gap-10 text-[10px] uppercase tracking-[0.3em] font-bold transition-colors duration-500 text-primary/70" id="main-nav">
+                        <button onclick="goHome()" class="hover:text-accent transition-colors">Home</button>
+                        <button onclick="switchView('all')" class="hover:text-accent transition-colors">Todos</button>
+                        <button onclick="switchView('moda')" class="hover:text-accent transition-colors">Moda</button>
+                        <button onclick="switchView('cosmeticos')" class="hover:text-accent transition-colors">Cosméticos</button>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-8 text-primary" id="header-actions">
+                    <button onclick="toggleSearch()" class="hover:text-accent transition-colors"><i data-lucide="search" class="w-5 h-5"></i></button>
+                    
+                    <div class="relative" id="user-menu-container">
+                        
+                        <button onclick="handleUserIconClick()" class="group relative hover:text-accent transition-colors outline-none">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span id="user-logged-indicator" class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full hidden"></span>
+                        </button>
+                        
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-4 w-64 bg-white rounded-lg shadow-xl border border-primary/10 p-2 z-[100] origin-top-right transition-all">
+                            <div class="px-4 pt-4 pb-3 border-b border-primary/10">
+                                <p class="text-[9px] uppercase tracking-ultra font-bold text-primary/40 mb-1">Bem-vindo,</p>
+                                <p id="menu-user-name" class="font-serif text-lg text-primary truncate">Visitante</p>
+                            </div>
+                            <a href="#" onclick="openMyOrders(); return false;" class="flex items-center gap-3 px-4 py-3 mt-2 text-sm font-medium text-primary/70 hover:bg-cream hover:text-primary transition-colors rounded-lg">
+                                <i data-lucide="package" class="w-4 h-4 opacity-70"></i>
+                                <span>Meus Pedidos</span>
+                            </a>
+                            <a href="#" onclick="clientLogout(); return false;" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500/80 hover:bg-red-50/50 hover:text-red-600 transition-colors rounded-lg">
+                                <i data-lucide="log-out" class="w-4 h-4 opacity-70"></i>
+                                <span>Sair da Conta</span>
+                            </a>
+                        </div>
+                        
+                    </div>
+                    
+                    <button onclick="toggleCart()" class="relative hover:text-accent transition-colors"><i data-lucide="shopping-bag" class="w-5 h-5"></i><span id="cart-count" class="absolute -top-2 -right-2 bg-accent text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full scale-0 transition-transform">0</span></button>
+                </div>
+            </div>
+        </div>
+        <div id="search-overlay" class="absolute top-full left-0 w-full bg-white p-6 transform -translate-y-full transition-transform duration-500 ease-in-out -z-10 flex justify-center border-b border-primary/10 opacity-0 shadow-lg"><div class="w-full max-w-4xl relative flex items-center"><i data-lucide="search" class="w-5 h-5 text-primary/40 absolute left-0"></i><input type="text" id="search-input" placeholder="BUSCAR..." class="w-full bg-transparent py-3 pl-10 font-sans text-sm uppercase tracking-widest outline-none placeholder-primary/30 text-primary" onkeyup="handleSearch(this.value)"><button onclick="toggleSearch()" class="ml-6 hover:text-accent"><i data-lucide="x" class="w-5 h-5 opacity-50"></i></button></div></div>
+    </header>
+
+    <main id="main-content" class="min-h-screen w-full overflow-x-hidden pt-32">
+        <div id="view-home" class="transition-opacity duration-700">
+            <section class="relative h-[90vh] flex items-center justify-center overflow-hidden -mt-8">
+                <div class="absolute inset-0 animate-ken-burns"><div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center grayscale-[20%]"></div><div class="absolute inset-0 bg-black/30"></div></div>
+                <div class="relative z-10 text-center text-white p-8 fade-up"><span class="text-xs uppercase tracking-[0.4em] font-bold mb-6 block opacity-80">Coleção 2025</span><h1 class="font-serif text-7xl md:text-9xl mb-10 leading-none drop-shadow-lg">Elegância <br><span class="text-accent italic">Pura</span></h1><button onclick="scrollToElement('home-highlights')" class="bg-white text-primary px-12 py-4 text-[11px] uppercase tracking-[0.3em] font-bold hover:bg-accent hover:text-white transition-all duration-500">Explorar</button></div>
+            </section>
+            <section id="home-categories" class="grid md:grid-cols-2 h-[70vh] reveal">
+                <div class="relative overflow-hidden group cursor-pointer" onclick="switchView('moda')"><img src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105"><div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-all"></div><div class="absolute inset-0 flex flex-col items-center justify-center text-white"><h3 class="font-serif text-6xl italic mb-4">Moda</h3><span class="text-[10px] uppercase tracking-ultra font-bold border-b border-white/50 pb-2">Ver Coleção</span></div></div>
+                <div class="relative overflow-hidden group cursor-pointer" onclick="switchView('cosmeticos')"><img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=1000&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-105"><div class="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-all"></div><div class="absolute inset-0 flex flex-col items-center justify-center text-white"><h3 class="font-serif text-6xl italic mb-4">Cosméticos</h3><span class="text-[10px] uppercase tracking-ultra font-bold border-b border-white/50 pb-2">Ver Produtos</span></div></div>
+            </section>
+            <section id="home-highlights" class="container mx-auto px-8 md:px-16 py-40 min-h-[80vh] reveal">
+                <div class="text-center mb-24"><span class="text-accent font-bold text-xs uppercase tracking-ultra mb-6 block">Trending</span><h2 class="font-serif text-5xl italic text-primary mb-6">Destaques da Semana</h2></div>
+                <div id="highlights-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-20 mb-24"></div>
+                <div class="text-center"><button onclick="switchView('all')" class="border-b-2 border-primary pb-2 text-xs uppercase tracking-widest font-bold hover:text-accent hover:border-accent transition-all">Ver Coleção Completa</button></div>
+            </section>
+        </div>
+
+        <div id="view-catalog" class="hidden transition-opacity duration-700 opacity-0 min-h-screen"><div class="container mx-auto px-8 md:px-16 py-16"><div class="text-center mb-24 fade-up" id="catalog-header"><h2 id="catalog-title" class="font-serif text-6xl italic text-primary mb-4">Coleção Completa</h2><p id="catalog-subtitle" class="text-primary/60 uppercase tracking-[0.25em] text-xs font-bold">Explore nossa curadoria</p></div><div id="search-results-title" class="hidden text-center mb-24 fade-up"><h2 class="font-serif text-3xl text-stone-500">Resultados para "<span id="search-term" class="text-primary"></span>"</h2></div><div id="product-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-32 pb-32"></div></div></div>
+        
+        <div id="view-checkout" class="hidden py-20 min-h-screen">
+            <div class="container mx-auto px-8 md:px-16 max-w-6xl fade-up">
+                <button onclick="goBack()" class="flex items-center text-primary/50 hover:text-primary mb-12 transition-all text-[11px] uppercase tracking-[0.25em] font-bold group">
+                    <i data-lucide="arrow-left" class="w-4 h-4 mr-4 group-hover:-translate-x-1 transition-transform"></i> Voltar
+                </button>
+                
+                <div class="lg:grid lg:grid-cols-12 lg:gap-16 items-start"> 
+                    
+                    <div class="lg:col-span-7 bg-white border border-primary/10 shadow-lg rounded-xl"> 
+                        
+                        <div class="p-8 md:p-10 pb-10 border-b border-primary/10">
+                            <h3 class="font-serif text-2xl mb-8 italic flex items-center gap-4">
+                                <span class="text-sm font-sans font-bold text-accent">01.</span> Identificação
+                            </h3>
+                            <div class="space-y-8"> 
+                                <div>
+                                    <label for="checkout-name" class="checkout-label">Nome Completo</label>
+                                    <div>
+                                        <input id="checkout-name" type="text" class="checkout-input-luxe" placeholder="Seu nome...">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="checkout-email" class="checkout-label">E-mail</label>
+                                    <div>
+                                        <input id="checkout-email" type="email" class="checkout-input-luxe" placeholder="seu@email.com">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-8 md:p-10 pt-10 pb-10 border-b border-primary/10">
+                            <h3 class="font-serif text-2xl mb-8 italic flex items-center gap-4">
+                                <span class="text-sm font-sans font-bold text-accent">02.</span> Entrega
+                            </h3>
+                            <div class="space-y-8">
+                                <div>
+                                    <label for="checkout-zip" class="checkout-label">CEP</label>
+                                    <div class="relative">
+                                        <input id="checkout-zip" type="text" class="checkout-input-luxe" placeholder="00000-000" maxlength="9" onkeyup="handleZip(this.value)">
+                                        <div id="zip-loading" class="absolute right-4 top-1/2 -translate-y-1/2 hidden">
+                                            <i data-lucide="loader-2" class="animate-spin w-4 h-4 text-accent"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="checkout-city" class="checkout-label">Cidade / UF</label>
+                                    <div>
+                                        <input id="checkout-city" type="text" class="checkout-input-luxe opacity-60" readonly placeholder="Preenchido por CEP">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="checkout-address" class="checkout-label">Endereço (Rua, Av.)</label>
+                                    <div>
+                                        <input id="checkout-address" type="text" class="checkout-input-luxe opacity-60" readonly placeholder="Preenchido por CEP">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="checkout-number" class="checkout-label">Número</label>
+                                    <div>
+                                        <input id="checkout-number" type="text" class="checkout-input-luxe" placeholder="Ex: 123">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="checkout-comp" class="checkout-label">Complemento</label>
+                                    <div>
+                                        <input id="checkout-comp" type="text" class="checkout-input-luxe" placeholder="Apto, Bloco (Opcional)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="payment-section" class="p-8 md:p-10 pt-10 opacity-60 transition-all duration-500 hover:opacity-100">
+                            <h3 class="font-serif text-2xl mb-8 italic flex items-center gap-4">
+                                <span class="text-sm font-sans font-bold text-accent">03.</span> Pagamento
+                            </h3>
+                            <div class="flex items-center justify-center gap-3 text-primary/60 text-xs font-bold uppercase tracking-widest mb-6">
+                                <i data-lucide="lock" class="w-4 h-4"></i>
+                                <span>Pagamento Seguro via Mercado Pago</span>
+                            </div>
+                            <button onclick="processCheckout()" id="btn-pay" class="w-full bg-primary text-cream py-6 text-[12px] uppercase tracking-ultra font-bold hover:bg-accent transition-all duration-500 rounded-lg shadow-lg hover:shadow-accent/30">Ir para Pagamento</button>
+                            
+                            <button onclick="processTestCheckout()" id="btn-test-pay" class="w-full bg-green-600 text-white mt-4 py-4 text-xs uppercase tracking-widest font-bold hover:bg-green-700 transition-all duration-500 rounded-lg shadow-lg hover:shadow-green-700/30">
+                                CRIAR PEDIDO DE TESTE (Bypass Pagamento)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-16 lg:mt-0 lg:col-span-5 lg:sticky lg:top-40"> 
+                        <div class="bg-white p-10 border border-primary/10 shadow-lg rounded-xl">
+                            <h3 class="font-serif text-2xl mb-12 text-center italic tracking-widest">Resumo do Pedido</h3>
+                            <div id="checkout-items" class="space-y-8 mb-12 max-h-[500px] overflow-y-auto scrollbar-hide pr-4">
+                            </div>
+                            <div class="pt-10 border-t border-dashed border-primary/10">
+                                <div class="flex justify-between text-3xl font-serif text-primary">
+                                    <span>Total</span>
+                                    <span id="checkout-total" class="font-bold">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div id="view-orders" class="hidden py-32 min-h-screen bg-cream"><div class="container mx-auto px-8 md:px-16 max-w-4xl fade-up"><div class="text-center mb-20"><h2 class="font-serif text-4xl italic text-primary mb-4">Histórico de Pedidos</h2><p class="text-xs uppercase tracking-ultra text-primary/50 font-bold">Acompanhe suas aquisições</p></div><div id="my-orders-list" class="space-y-8"></div></div></div>
+    </main>
+
+    <footer class="bg-[#141414] text-cream/80">
+        
+        <div class="container mx-auto px-8 md:px-16 py-20 grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-24 text-center md:text-left border-t border-white/10">
+            <div class="md:col-span-2">
+                <span class="font-serif text-4xl italic tracking-wider text-cream">Queen By</span>
+                <p class="mt-6 max-w-sm mx-auto md:mx-0 text-sm leading-loose opacity-60 font-light">Redefinindo o luxo contemporâneo com uma curadoria que celebra a individualidade e a sofisticação atemporal.</p>
+            </div>
+            <div>
+                <h4 class="text-cream text-xs uppercase tracking-ultra font-bold mb-8">Nossa Loja</h4>
+                <a href="https://maps.google.com/?q=Rua+Oscar+Freire,+1234,+São+Paulo,+SP" target="_blank" rel="noopener noreferrer" class="text-[11px] uppercase tracking-widest opacity-70 hover:opacity-100 transition-opacity font-medium leading-relaxed block">Rua Oscar Freire, 1234 <br>Jardins, São Paulo - SP <br>CEP 01426-000</a>
+                <p class="text-[11px] uppercase tracking-widest opacity-70 font-medium leading-relaxed mt-6">Seg - Sáb: 10h às 20h <br>Dom: 12h às 18h</p>
+            </div>
+            <div>
+                <h4 class="text-cream text-xs uppercase tracking-ultra font-bold mb-8">Atendimento</h4>
+                <ul class="space-y-4 text-[11px] uppercase tracking-widest opacity-70 font-medium">
+                    <li><a href="https://wa.me/5511988023066" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">Fale Conosco</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-white/5 py-8">
+            <div class="container mx-auto px-8 md:px-16 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-widest opacity-40">
+                <p>© 2025 Queen By Boutique. Todos os direitos reservados.</p>
+                <div class="flex items-center gap-6"><i data-lucide="credit-card" class="w-4 h-4"></i><span>Segurança Mercado Pago</span></div>
+            </div>
+        </div>
+    </footer>
+
+    <div id="logout-confirm-modal" class="fixed inset-0 bg-[#0f0f0f]/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-6 fade-up">
+        <div class="bg-cream w-full max-w-md p-12 relative shadow-2xl border border-primary/5 rounded-3xl text-center">
+            <button onclick="closeLogoutModal()" class="absolute top-6 right-6 p-2 hover:bg-stone-200/50 rounded-full transition-colors duration-300 group">
+                <i data-lucide="x" class="w-5 h-5 text-stone-400 group-hover:text-primary transition-colors"></i>
+            </button>
+            
+            <h3 class="font-serif text-3xl italic text-primary mb-6">Já vai?</h3>
+            <p class="font-sans text-primary/70 mb-12">Tem certeza que deseja sair da sua conta?</p>
+            
+            <div class="flex gap-4">
+                <button onclick="closeLogoutModal()" class="flex-1 bg-stone-200 text-primary py-5 text-[11px] uppercase tracking-ultra font-bold hover:bg-stone-300 transition-all duration-500 rounded-2xl">
+                    Cancelar
+                </button>
+                <button onclick="handleConfirmLogout()" class="flex-1 bg-primary text-cream py-5 text-[11px] uppercase tracking-ultra font-bold hover:bg-accent transition-all duration-500 rounded-2xl shadow-lg">
+                    Sair da Conta
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="auth-modal" class="fixed inset-0 bg-[#0f0f0f]/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-6 fade-up"><div class="bg-cream w-full max-w-md p-12 relative shadow-2xl border border-primary/5 rounded-3xl"><button onclick="closeAuthModal()" class="absolute top-6 right-6 p-2 hover:bg-stone-200/50 rounded-full transition-colors duration-300 group"><i data-lucide="x" class="w-5 h-5 text-stone-400 group-hover:text-primary transition-colors"></i></button><div class="text-center mb-12"><span class="font-serif text-3xl italic text-primary">Bem-vindo(a)</span><div class="flex justify-center gap-8 mt-8 border-b border-primary/10"><button onclick="switchAuth('login')" id="tab-login" class="pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary border-b-[3px] border-primary transition-all">Entrar</button><button onclick="switchAuth('signup')" id="tab-signup" class="pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary/40 border-b-[3px] border-transparent transition-all hover:text-primary">Criar Conta</button></div></div><div class="min-h-[350px] flex flex-col justify-center"><form id="form-login" onsubmit="handleClientLogin(event)" class="space-y-6"><div class="space-y-4"><div class="input-wrapper"><i data-lucide="mail" class="input-icon"></i><input id="login-email" type="email" class="checkout-input-signature" placeholder="E-MAIL" required></div><div class="input-wrapper"><i data-lucide="lock" class="input-icon"></i><input id="login-pass" type="password" class="checkout-input-signature" placeholder="SENHA" required></div></div><button type="submit" class="w-full bg-primary text-cream py-5 text-[11px] uppercase tracking-ultra font-bold hover:bg-accent transition-all duration-500 rounded-2xl shadow-lg">ACESSAR CONTA</button><p class="text-center text-[10px] uppercase tracking-widest text-stone-400 cursor-pointer hover:text-primary transition-colors font-bold">Esqueceu sua senha?</p></form><form id="form-signup" onsubmit="handleClientSignup(event)" class="space-y-6 hidden"><div class="space-y-4"><div class="input-wrapper"><i data-lucide="user" class="input-icon"></i><input id="signup-name" type="text" class="checkout-input-signature" placeholder="NOME COMPLETO" required></div><div class="input-wrapper"><i data-lucide="mail" class="input-icon"></i><input id="signup-email" type="email" class="checkout-input-signature" placeholder="E-MAIL" required></div><div class="input-wrapper"><i data-lucide="lock" class="input-icon"></i><input id="signup-pass" type="password" class="checkout-input-signature" placeholder="CRIAR SENHA" required minlength="6"></div></div><button type="submit" class="w-full bg-primary text-cream py-5 text-[11px] uppercase tracking-ultra font-bold hover:bg-accent transition-all duration-500 rounded-2xl shadow-lg">CADASTRAR-SE</button></form></div></div></div>
+    
+    <div id="quick-view" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] md:w-full max-w-5xl h-auto max-h-[90vh] bg-cream shadow-2xl z-[70] opacity-0 pointer-events-none scale-[0.95] modal-transition overflow-hidden flex flex-col md:grid md:grid-cols-5 rounded-3xl">
+        <div class="relative h-72 md:h-full bg-[#f0ece9] md:col-span-2">
+            <img id="qv-img" src="" class="w-full h-full object-cover transition-all duration-[1.5s] ease-in-out opacity-0" onload="this.classList.remove('opacity-0')">
+        </div>
+        <div class="p-8 md:p-12 overflow-y-auto flex flex-col md:col-span-3">
+            <button onclick="closeModals()" class="absolute top-6 right-6 p-2 text-primary/40 hover:text-primary hover:bg-primary/10 rounded-full transition-all duration-300"><i data-lucide="x" class="w-6 h-6 stroke-[2]"></i></button>
+            <div class="mb-6">
+                <span id="qv-category" class="text-accent uppercase tracking-ultra text-[10px] font-bold mb-3 block"></span>
+                <h2 id="qv-name" class="text-4xl md:text-5xl font-serif italic text-primary mb-4 leading-tight"></h2>
+                <p id="qv-price" class="text-3xl font-light text-primary"></p>
+                <p id="qv-description" class="text-primary/70 font-sans text-sm leading-relaxed my-8"></p>
+                
+            </div>
+            <p id="qv-stock-alert" class="text-accent text-xs uppercase tracking-widest mb-6 hidden font-bold flex items-center gap-3"><i data-lucide="alert-octagon" class="w-4 h-4"></i> <span></span></p>
+            
+            <div class="mt-auto">
+                <button id="qv-add-btn" class="w-full py-5 text-sm uppercase tracking-widest font-bold bg-primary text-cream hover:bg-accent transition-all duration-500 rounded-xl shadow-lg hover:shadow-accent/30 disabled:opacity-50 disabled:bg-stone-400"></button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full md:w-[500px] bg-cream shadow-2xl z-[70] transform translate-x-full modal-transition flex flex-col border-l border-primary/5"><div class="p-16 flex justify-between items-center"><h2 class="font-serif text-3xl italic text-primary">Sua Seleção</h2><button onclick="toggleCart()" class="hover:rotate-90 transition-transform duration-700"><i data-lucide="x" class="w-8 h-8 stroke-[1]"></i></button></div><div id="cart-items" class="flex-1 overflow-y-auto p-16 pt-0 space-y-16"></div><div class="p-16 bg-white border-t border-primary/5"><div class="flex justify-between text-3xl font-serif mb-16 italic text-primary"><span>Total</span><span id="cart-total">R$ 0,00</span></div><button onclick="goToCheckout()" id="btn-checkout-start" class="w-full bg-primary text-cream py-8 text-xs uppercase tracking-ultra font-black hover:bg-accent transition-all duration-700 disabled:opacity-50">Finalizar Compra</button></div></div>
+    
+    <div id="order-details-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] md:w-full max-w-3xl h-auto max-h-[80vh] bg-white shadow-2xl z-[70] opacity-0 pointer-events-none scale-[0.95] modal-transition rounded-2xl overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-primary/10 bg-cream">
+            <div>
+                <p class="text-xs uppercase tracking-widest font-bold text-primary/50">Detalhes do Pedido</p>
+                <h3 id="modal-order-id-title" class="font-serif text-2xl italic text-primary"></h3>
+            </div>
+            <button onclick="closeModals()" class="p-2 text-primary/40 hover:text-primary hover:bg-primary/10 rounded-full transition-all duration-300">
+                <i data-lucide="x" class="w-6 h-6 stroke-[2]"></i>
+            </button>
+        </div>
+        
+        <div class="p-8 md:p-10 overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <p class="checkout-label mb-1">Status</p>
+                    <span id="modal-order-status" class="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest"></span>
+                </div>
+                <div>
+                    <p class="checkout-label mb-1">Data</p>
+                    <p id="modal-order-date" class="font-sans text-primary font-medium"></p>
+                </div>
+                <div>
+                    <p class="checkout-label mb-1">Total</p>
+                    <p id="modal-order-total" class="font-serif text-2xl text-primary font-bold"></p>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <p class="checkout-label mb-2">Endereço de Entrega</p>
+                <p id="modal-order-address" class="font-sans text-primary/80 leading-relaxed"></p>
+            </div>
+            
+            <div>
+                <p class="checkout-label mb-4">Itens Inclusos</p>
+                <div id="modal-order-items" class="space-y-6">
+                    </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // ===== INÍCIO DA MUDANÇA - Variável myOrders adicionada =====
+        const API='http://localhost:3001/api';
+        let cart=JSON.parse(localStorage.getItem('bellaCart'))||[],
+            products=[],
+            lastView='home',
+            currentUser=JSON.parse(localStorage.getItem('queenUser'))||null, 
+            currentUserToken=localStorage.getItem('queenUserToken')||null,
+            myOrders = []; // Variável para guardar os pedidos
+        // ===== FIM DA MUDANÇA =====
+        
+        async function init(){try{const r=await fetch(`${API}/products`);products=await r.json();renderHighlights();}catch(e){}updateCart();checkUser();lucide.createIcons();setupScrollReveal();window.addEventListener('scroll',handleScroll);handleScroll(); } 
+        
+        function handleScroll(){const bg=document.getElementById('header-bg');bg.classList.toggle('shadow-sm',window.scrollY>50)}
+        function checkUser(){const i=document.getElementById('user-logged-indicator');if(currentUser){i.classList.remove('hidden');if(document.getElementById('checkout-name'))document.getElementById('checkout-name').value=currentUser.user_metadata.full_name||'';if(document.getElementById('checkout-email'))document.getElementById('checkout-email').value=currentUser.email||''}else{i.classList.add('hidden')}}
+        function handleUserIconClick(){if(currentUser){toggleUserMenu()}else openAuthModal()}
+        
+        function toggleUserMenu(){
+            if(!currentUser)return;
+            const m=document.getElementById('user-dropdown');
+            if(m){
+                if(currentUser.user_metadata)document.getElementById('menu-user-name').innerText=currentUser.user_metadata.full_name||'Cliente';
+                m.classList.toggle('hidden'); 
+            }
+        }
+
+        window.addEventListener('click',e=>{const c=document.getElementById('user-menu-container'),m=document.getElementById('user-dropdown');if(c&&m&&!c.contains(e.target))m.classList.add('hidden')});
+        
+        function clientLogout(){
+            document.getElementById('user-dropdown')?.classList.add('hidden'); 
+            document.getElementById('logout-confirm-modal').classList.remove('hidden');
+            lucide.createIcons(); 
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logout-confirm-modal').classList.add('hidden');
+        }
+
+        function handleConfirmLogout() {
+            currentUser=null;
+            currentUserToken=null; 
+            localStorage.removeItem('queenUser');
+            localStorage.removeItem('queenUserToken'); 
+            checkUser();
+            closeLogoutModal(); 
+            showToast("Você saiu da conta.");
+            if(!document.getElementById('view-checkout').classList.contains('hidden')||!document.getElementById('view-orders').classList.contains('hidden'))goHome();
+        }
+
+        // ===== INÍCIO DA MUDANÇA - openMyOrders() =====
+        async function openMyOrders(){
+            document.getElementById('user-dropdown').classList.add('hidden');
+            
+            if(!currentUser || !currentUserToken)return showToast("Faça login primeiro.",'error');
+            
+            switchView('orders');
+            const list=document.getElementById('my-orders-list');
+            list.innerHTML='<div class="text-center py-20 text-primary/40 font-serif animate-pulse tracking-widest text-sm">CARREGANDO SEUS PEDIDOS...</div>';
+            
+            try{
+                const res=await fetch(`${API}/client/orders/${currentUser.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentUserToken}`
+                    }
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || `Erro ${res.status}`);
+                }
+
+                myOrders = await res.json(); // Salva os pedidos na variável global
+                
+                if(myOrders.length===0){
+                    list.innerHTML='<div class="text-center py-20 text-primary/40 font-serif tracking-widest text-sm uppercase">Você ainda não fez pedidos.</div>';
+                } else {
+                    // MUDANÇA: Adicionado onclick e classes de cursor/hover
+                    list.innerHTML=myOrders.map(o=>`
+                    <div onclick="openOrderDetails('${o.id}')" class="bg-white p-10 rounded-sm shadow-sm border border-primary/5 flex flex-col md:flex-row justify-between items-center gap-8 transition-all hover:shadow-lg hover:border-primary/20 cursor-pointer">
+                        <div class="flex-1">
+                            <p class="text-[10px] font-bold text-primary/40 uppercase tracking-ultra mb-3">Pedido #${String(o.id || '').slice(0,8)}</p>
+                            <p class="font-serif text-2xl italic text-primary">${new Date(o.created_at).toLocaleDateString('pt-BR')}</p>
+                            <p class="text-sm text-stone-500 mt-2 font-medium tracking-wider">${o.items.length} item(ns) • ${o.shipping_address?o.shipping_address.split(',')[0]:'Entrega Digital'}</p>
+                        </div>
+                        <div class="text-right flex flex-col items-end gap-4">
+                            <p class="font-serif text-3xl text-primary">${formatMoney(o.total)}</p>
+                            <span class="px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-ultra ${o.status.includes('Aguardando')?'bg-amber-100 text-amber-700':o.status==='Enviado'?'bg-primary text-cream':'bg-green-100 text-green-700'}">${o.status}</span>
+                        </div>
+                    </div>`).join('');
+                }
+            } catch(e) {
+                console.error("Erro em openMyOrders:", e);
+                list.innerHTML='<div class="text-center text-red-500 py-10">Erro ao carregar seu histórico.</div>';
+                
+                const errorMsg = String(e.message || 'Erro desconhecido');
+                if (errorMsg.includes('401') || errorMsg.includes('inválido') || errorMsg.includes('negado')) {
+                    showToast("Sua sessão expirou. Faça login novamente.", "error");
+                    setTimeout(() => handleConfirmLogout(), 2000);
+                }
+            }
+        }
+        // ===== FIM DA MUDANÇA =====
+
+        // ===== INÍCIO DA MUDANÇA - Nova Função openOrderDetails() =====
+        function openOrderDetails(orderId) {
+            const order = myOrders.find(o => o.id == orderId); // Usa '==' para comparar string com número
+            if (!order) {
+                return showToast("Pedido não encontrado.", "error");
+            }
+            
+            // Preenche o cabeçalho
+            document.getElementById('modal-order-id-title').innerText = `Pedido #${String(order.id).slice(0, 8)}`;
+            
+            // Preenche os status
+            const statusEl = document.getElementById('modal-order-status');
+            const statusText = order.status || 'Pendente';
+            statusEl.innerText = statusText;
+            statusEl.className = `px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest ${statusText.includes('Aguardando') ? 'bg-amber-100 text-amber-700' : statusText === 'Enviado' ? 'bg-primary text-cream' : 'bg-green-100 text-green-700'}`;
+            
+            document.getElementById('modal-order-date').innerText = new Date(order.created_at).toLocaleDateString('pt-BR');
+            document.getElementById('modal-order-total').innerText = formatMoney(order.total);
+            document.getElementById('modal-order-address').innerText = order.shipping_address || 'N/A';
+            
+            // Preenche os itens
+            const itemsContainer = document.getElementById('modal-order-items');
+            itemsContainer.innerHTML = (order.items || []).map(item => `
+                <div class="flex items-center gap-6 p-4 bg-cream border border-primary/10 rounded-lg">
+                    <img src="${item.image}" class="w-16 h-20 object-cover rounded-md bg-[#f0ece9]">
+                    <div class="flex-1">
+                        <p class="font-serif text-lg italic text-primary">${item.name}</p>
+                        <p class="text-primary/60 font-sans text-xs tracking-widest font-medium">${formatMoney(item.price)} x ${item.quantity}</p>
+                    </div>
+                    <p class="font-sans text-lg font-bold text-primary">${formatMoney(item.price * item.quantity)}</p>
+                </div>
+            `).join('');
+
+            // Abre o modal
+            document.getElementById('order-details-modal').classList.remove('pointer-events-none', 'opacity-0', 'scale-[0.95]');
+            document.getElementById('overlay').classList.remove('pointer-events-none', 'opacity-0');
+            lucide.createIcons();
+        }
+        // ===== FIM DA MUDANÇA =====
+        
+        function openAuthModal(){document.getElementById('auth-modal').classList.remove('hidden')}
+        function closeAuthModal(){document.getElementById('auth-modal').classList.add('hidden')}
+        function switchAuth(t){document.getElementById('form-login').classList.toggle('hidden',t!=='login');document.getElementById('form-signup').classList.toggle('hidden',t!=='signup');document.getElementById('tab-login').className=t==='login'?'flex-1 pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary border-b-[3px] border-primary transition-all':'flex-1 pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary/40 border-b-[3px] border-transparent transition-all hover:text-primary';document.getElementById('tab-signup').className=t==='signup'?'flex-1 pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary border-b-[3px] border-primary transition-all':'flex-1 pb-4 text-[11px] uppercase tracking-[0.2em] font-bold text-primary/40 border-b-[3px] border-transparent transition-all hover:text-primary'}
+        
+        async function handleClientLogin(e){
+            e.preventDefault();
+            const btn=e.target.querySelector('button');
+            const oh=btn.innerHTML;
+            btn.innerHTML='...';
+            btn.disabled=true;
+            try{
+                const r=await fetch(`${API}/client/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('login-email').value,password:document.getElementById('login-pass').value})});
+                const d=await r.json();
+                if(d.success){
+                    currentUser=d.user;
+                    currentUserToken=d.session.access_token; 
+                    localStorage.setItem('queenUser',JSON.stringify(currentUser));
+                    localStorage.setItem('queenUserToken',currentUserToken); 
+                    
+                    checkUser();
+                    closeAuthModal();
+                    showToast(`Bem-vindo(a)!`);
+                    if(cart.length>0&&!document.getElementById('view-checkout').classList.contains('hidden'))goToCheckout();
+                } else {
+                    throw new Error(d.error);
+                }
+            } catch(e) {
+                showToast(e.message,'error');
+            } finally {
+                btn.innerHTML=oh;
+                btn.disabled=false;
+            }
+        }
+
+        async function handleClientSignup(e){e.preventDefault();const btn=e.target.querySelector('button');const oh=btn.innerHTML;btn.innerHTML='...';btn.disabled=true;try{const r=await fetch(`${API}/client/signup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('signup-name').value,email:document.getElementById('signup-email').value,password:document.getElementById('signup-pass').value})});const d=await r.json();if(d.success){if(d.session){currentUser=d.user;localStorage.setItem('queenUser',JSON.stringify(currentUser));checkUser();closeAuthModal();showToast("Conta criada!");if(cart.length>0&&!document.getElementById('view-checkout').classList.contains('hidden'))goToCheckout()}else{showToast("Verifique seu e-mail.");switchAuth('login')}}else throw new Error(d.error)}catch(e){showToast(e.message,'error')}finally{btn.innerHTML=oh;btn.disabled=false}}
+        
+        function goHome(){switchView('home')} function goBack(){switchView(lastView==='checkout'?'home':lastView)}
+        function switchView(v){lastView=v==='checkout'||v==='orders'?lastView:v; ['view-home','view-catalog','view-checkout','view-orders'].forEach(id=>document.getElementById(id).classList.add('hidden')); document.getElementById('view-catalog').classList.remove('opacity-100');
+            if(v==='home'){document.getElementById('view-home').classList.remove('hidden');handleScroll();window.scrollTo({top:0,behavior:'smooth'})}
+            else if(v==='checkout'){document.getElementById('view-checkout').classList.remove('hidden');window.scrollTo({top:0})}
+            else if(v==='orders'){document.getElementById('view-orders').classList.remove('hidden');window.scrollTo({top:0})}
+            else{document.getElementById('view-catalog').classList.remove('hidden');setTimeout(()=>document.getElementById('view-catalog').classList.add('opacity-100'),50);const t={all:['Coleção Completa','Explore nossa curadoria'],moda:['Moda','Seleção de vestuário'],cosmeticos:['Cosméticos','Cuidados exclusivos'],search:['Busca','Resultados da pesquisa']};document.getElementById('catalog-title').innerText=t[v][0];document.getElementById('catalog-subtitle').innerText=t[v][1];renderProducts(v);window.scrollTo({top:0})}
+        }
+        function renderHighlights(){const g=document.getElementById('highlights-grid');if(!g)return;const h=products.filter(p=>p.is_highlight),s=h.length>0?h:products.slice(0,4);g.innerHTML=s.map((p,i)=>createCard(p,i)).join('');lucide.createIcons({scope:g});setupScrollReveal()}
+        function renderProducts(f='all',t=''){const g=document.getElementById('product-grid'),hg=document.getElementById('home-highlights'),apt=document.getElementById('all-products-title');let fil=products;if(f==='search')fil=products.filter(p=>p.name.toLowerCase().includes(t)||p.category.toLowerCase().includes(t));else if(f!=='all')fil=products.filter(p=>p.category===f);g.innerHTML=fil.length?fil.map((p,i)=>createCard(p,i)).join(''):'<div class="col-span-full text-center py-40 text-primary/40 font-serif tracking-widest text-sm uppercase">NENHUMA PEÇA ENCONTRADA</div>';lucide.createIcons({scope:g});setupScrollReveal()}
+        function createCard(p,i){const so=p.stock===0,low=p.stock>0&&p.stock<5;return `<div class="group cursor-pointer reveal" style="transition-delay:${i*0.15}s" onclick="${!so?`openQuickView(${p.id})`:''}"><div class="relative overflow-hidden mb-10 aspect-[3/4.5] bg-[#f0ece9]"><img src="${p.image}" loading="lazy" class="w-full h-full object-cover transition-all duration-[2s] ease-out ${so?'grayscale opacity-40':'group-hover:scale-105'}">${so?'<div class="absolute inset-0 flex items-center justify-center"><span class="text-primary text-[10px] uppercase tracking-ultra font-bold bg-cream/90 px-8 py-4">Esgotado</span></div>':''}${!so?'<div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 flex items-end justify-center p-8"><span class="text-cream text-[10px] uppercase tracking-ultra font-bold backdrop-blur-xl bg-primary/20 px-10 py-4 border border-cream/20 hover:bg-primary hover:border-primary transition-all duration-500">Visualizar</span></div>':''}</div><div class="text-center space-y-4">${low?`<p class="text-[9px] font-bold text-accent uppercase tracking-ultra">Últimas unidades</p>`:''}<h3 class="font-serif text-2xl text-primary italic">${p.name}</h3><p class="text-primary/60 font-sans text-xs tracking-widest font-medium">${formatMoney(p.price)}</p></div></div>`}
+        
+        function openQuickView(id){
+            const p=products.find(i=>i.id===id);
+            if(!p)return;
+            document.getElementById('qv-img').src=p.image;
+            document.getElementById('qv-category').innerText=p.category;
+            document.getElementById('qv-name').innerText=p.name;
+            document.getElementById('qv-price').innerText=formatMoney(p.price);
+            document.getElementById('qv-description').innerText = p.description || 'Nenhuma descrição disponível.';
+            
+            const sa=document.getElementById('qv-stock-alert');
+            if(p.stock>0&&p.stock<5){sa.classList.remove('hidden');sa.innerText=`Apenas ${p.stock} disponíveis`}else{sa.classList.add('hidden')}
+            const btn=document.getElementById('qv-add-btn');
+            
+            if(p.stock>0){
+                btn.disabled=false;
+                btn.innerHTML='Adicionar à Sacola — '+formatMoney(p.price);
+                btn.onclick=()=>{addToCart(p.id);closeModals()} 
+            } else {
+                btn.disabled=true;
+                btn.innerHTML='Indisponível'
+            }
+            
+            document.getElementById('quick-view').classList.remove('pointer-events-none','opacity-0','scale-[0.95]');
+            document.getElementById('overlay').classList.remove('pointer-events-none','opacity-0')
+        }
+
+        function addToCart(id){
+            const p=products.find(i=>i.id===id),i=cart.find(x=>x.id===id);
+            if(!p||p.stock<=0)return showToast("Indisponível",'error');
+            if(i&&i.quantity>=p.stock)return showToast("Limite atingido",'error');
+            i?i.quantity++:cart.push({...p,quantity:1});
+            updateCart();
+            showToast("Adicionado");
+            toggleCart(true);
+        }
+        
+        function updateCart(){
+            localStorage.setItem('bellaCart',JSON.stringify(cart));
+            const t=cart.reduce((s,i)=>s+(i.price*i.quantity),0),c=cart.reduce((s,i)=>s+i.quantity,0);
+            document.getElementById('cart-count').innerText=c;
+            document.getElementById('cart-count').classList.toggle('scale-0',c===0);
+            document.getElementById('cart-count').classList.toggle('scale-100',c>0);
+            document.getElementById('cart-total').innerText=formatMoney(t);
+            document.getElementById('checkout-total').innerText=formatMoney(t);
+            document.getElementById('btn-checkout-start').disabled=c===0;
+            document.getElementById('payment-section').classList.toggle('opacity-30',c===0);
+            document.getElementById('payment-section').classList.toggle('pointer-events-none',c===0);
+            document.getElementById('payment-section').classList.toggle('grayscale',c===0);
+            
+            document.getElementById('cart-items').innerHTML=cart.map(i=> `<div class="flex gap-10 fade-up"><img src="${i.image}" class="w-28 h-40 object-cover bg-[#f0ece9]"><div class="flex-1 flex flex-col justify-between py-2"><div>
+                <h4 class="font-serif text-2xl leading-none mb-3 italic text-primary">${i.name}</h4>
+                <p class="text-primary/60 font-sans text-xs tracking-widest font-medium">${formatMoney(i.price)}</p>
+                </div><div class="flex justify-between items-center"><div class="flex items-center border border-primary/10 px-6 py-3 gap-8 font-sans text-xs font-bold">
+                <button onclick="changeQty(${i.id},-1)" class="hover:text-accent transition-colors">-</button>
+                <span>${i.quantity}</span>
+                <button onclick="changeQty(${i.id},1)" class="hover:text-accent transition-colors">+</button>
+                </div>
+                <button onclick="rem(${i.id})" class="text-[9px] uppercase tracking-ultra text-primary/40 hover:text-accent transition-colors font-bold">Remover</button>
+                </div></div></div>`).join('')||'<div class="h-full flex flex-col items-center justify-center text-primary/30 space-y-6"><p class="font-serif text-3xl italic">Sua sacola está vazia</p></div>';
+            
+            document.getElementById('checkout-items').innerHTML=cart.map(i=> `<div class="flex items-start gap-8 py-8 border-b border-primary/5">
+                <img src="${i.image}" class="w-20 h-28 object-cover bg-[#f0ece9]">
+                <div class="flex-1 min-w-0 py-2">
+                    <p class="font-serif text-lg italic text-primary">${i.name}</p>
+                    <p class="text-primary/50 text-[10px] uppercase tracking-widest mt-3 font-bold">Qtd: ${i.quantity}</p>
+                </div>
+                <p class="font-sans text-sm font-bold text-primary py-2">${formatMoney(i.price*i.quantity)}</p>
+                </div>`).join('')
+        }
+
+        function changeQty(id,d){
+            const i=cart.find(x=>x.id===id);
+            if(i){
+                i.quantity+=d;
+                if(i.quantity<=0)rem(id);
+                else updateCart()
+            }
+        }
+        
+        function rem(id){
+            cart=cart.filter(x=>x.id!==id);
+            updateCart();
+        }
+
+        function toggleCart(f){const s=document.getElementById('cart-sidebar'),o=document.getElementById('overlay'),op=!s.classList.contains('translate-x-full');s.classList.toggle('translate-x-full',f===undefined?op:!f);o.classList.toggle('pointer-events-none',f===undefined?op:!f);o.classList.toggle('opacity-0',f===undefined?op:!f)} 
+        
+        // ===== INÍCIO DA MUDANÇA - closeModals() =====
+        function closeModals(){
+            document.getElementById('quick-view').classList.add('pointer-events-none','opacity-0','scale-[0.95]');
+            
+            // Adicionado para fechar o novo modal de pedido
+            document.getElementById('order-details-modal').classList.add('pointer-events-none','opacity-0','scale-[0.95]');
+            
+            if(!document.getElementById('cart-sidebar').classList.contains('translate-x-full'))toggleCart(false);
+            else document.getElementById('overlay').classList.add('pointer-events-none','opacity-0');
+            
+            closeLogoutModal();
+            closeAuthModal();
+        } 
+        // ===== FIM DA MUDANÇA =====
+        
+        function goToCheckout(){if(!currentUser){toggleCart(false);openAuthModal();showToast("Faça login para continuar",'error')}else{switchView('checkout');toggleCart(false)}}
+        async function handleZip(z){z=z.replace(/\D/g,'');if(z.length===8){document.getElementById('zip-loading').classList.remove('hidden');try{const r=await fetch(`https://viacep.com.br/ws/${z}/json/`);const d=await r.json();if(!d.erro){document.getElementById('checkout-address').value=`${d.logradouro}, ${d.bairro}`;document.getElementById('checkout-city').value=`${d.localidade} - ${d.uf}`;document.getElementById('checkout-number').focus();showToast("Endereço localizado")}else showToast("CEP inválido",'error')}catch(e){}finally{document.getElementById('zip-loading').classList.add('hidden')}}}
+        function toggleSearch(){const c=document.getElementById('search-overlay');if(c.classList.contains('-translate-y-full')){c.classList.remove('-translate-y-full','opacity-0');document.getElementById('search-input').focus()}else{c.classList.add('-translate-y-full','opacity-0')}}
+        function handleSearch(t){t=t.toLowerCase();if(t.length>0){toggleSearch();switchView('search');renderProducts('search',t)}else{renderProducts(activeFilter)}}
+        async function processCheckout(){const b=document.getElementById('btn-pay'),oh=b.innerHTML,n=document.getElementById('checkout-name').value,e=document.getElementById('checkout-email').value,a=document.getElementById('checkout-address').value,nm=document.getElementById('checkout-number').value,c=document.getElementById('checkout-city').value,z=document.getElementById('checkout-zip').value;if(!n||!e||!a||!nm||!c||!z)return showToast("Preencha tudo",'error');b.disabled=true;b.innerHTML='Processando...';try{const full=`${a}, ${nm} - ${c}, CEP ${z}`;const r=await fetch(`${API}/checkout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerInfo:{name:n,email:e,address:full},cart,total:cart.reduce((s,i)=>s+(i.price*i.quantity),0),userId:currentUser.id})});const d=await r.json();if(d.status==='success'){cart=[];updateCart();window.location.href=d.paymentUrl}else throw new Error(d.message)}catch(e){showToast(e.message,'error');b.disabled=false;b.innerHTML=oh}}
+        
+        async function processTestCheckout() {
+            const b = document.getElementById('btn-test-pay'), oh = b.innerHTML;
+            const n = document.getElementById('checkout-name').value, e = document.getElementById('checkout-email').value, a = document.getElementById('checkout-address').value, nm = document.getElementById('checkout-number').value, c = document.getElementById('checkout-city').value, z = document.getElementById('checkout-zip').value;
+            
+            if (!n || !e || !a || !nm || !c || !z) return showToast("Preencha tudo (mesmo para teste)", 'error');
+            
+            b.disabled = true;
+            b.innerHTML = 'Processando Teste...';
+            
+            try {
+                const full = `${a}, ${nm} - ${c}, CEP ${z}`;
+                const r = await fetch(`${API}/checkout-teste`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customerInfo: { name: n, email: e, address: full },
+                        cart,
+                        total: cart.reduce((s, i) => s + (i.price * i.quantity), 0),
+                        userId: currentUser.id
+                    })
+                });
+                const d = await r.json();
+                
+                if (d.status === 'success') {
+                    cart = [];
+                    updateCart();
+                    showToast("Pedido de Teste criado com sucesso!");
+                    switchView('home'); 
+                } else {
+                    throw new Error(d.message);
+                }
+            } catch (e) {
+                showToast(e.message, 'error');
+                b.disabled = false;
+                b.innerHTML = 'CRIAR PEDIDO DE TESTE (Bypass Pagamento)';
+            }
+        }
+        
+        function setupScrollReveal(){const o=new IntersectionObserver((e)=>{e.forEach(n=>{if(n.isIntersecting)n.target.classList.add('active')})},{threshold:0.05});document.querySelectorAll('.reveal').forEach(el=>o.observe(el))} function scrollToElement(id){document.getElementById(id).scrollIntoView({behavior:'smooth'})} function formatMoney(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} 
+        
+        function showToast(m,t='success'){
+            const el=document.getElementById('toast');
+            el.innerText=m;
+            el.className=`fixed top-8 right-8 z-[110] transition-all duration-700 px-8 py-4 text-xs uppercase tracking-widest font-bold flex items-center gap-4 shadow-2xl border-l-4 ${t==='error'?'bg-red-900 text-white border-red-500':'bg-primary text-cream border-accent'}`;
+            el.classList.remove('opacity-0','translate-y-[-20px]');
+            setTimeout(()=>el.classList.add('opacity-0','translate-y-[-20px]'), 3000); 
+        }
+        
+        document.addEventListener('DOMContentLoaded',init);
+    </script>
+</body>
+</html>

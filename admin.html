@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queen Admin | Gestão</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: { 'sans': ['Inter', 'sans-serif'] },
+                extend: { colors: { primary: '#1c1917', accent: '#9d174d' } }
+            }
+        }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; opacity: 0; transform: translateY(5px); }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        body { background-color: #f3f4f6; color: #1f2937; -webkit-font-smoothing: antialiased; }
+        .separated-row { transition: all 0.2s; border-bottom: 1px solid #f3f4f6; }
+        .separated-row:hover { background-color: #f9fafb; }
+        .nav-active { background-color: rgba(255,255,255,0.1) !important; color: white !important; border-left: 4px solid #9d174d; }
+        .list-block { @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between transition-all hover:shadow-md; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="toast" class="fixed top-6 right-6 z-50 transition-all duration-500 opacity-0 translate-x-full bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg font-medium flex items-center gap-3"></div>
+    
+    <div id="admin-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+    
+    <header class="lg:hidden bg-[#111827] text-white p-4 flex justify-between items-center fixed w-full z-30 shadow-lg">
+        <span class="font-bold text-lg tracking-tight flex items-center gap-3"><div class="w-2 h-6 bg-accent rounded-full"></div> Queen By</span>
+        <button onclick="toggleSidebar()">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+    </header>
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-6 bg-gray-900">
+        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm fade-in text-center">
+            <h1 class="text-2xl font-bold text-gray-800 mb-8">Painel Administrativo</h1>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                <input type="email" id="admin-email-input" class="w-full border-2 border-gray-200 p-3 rounded-md focus:border-gray-900 outline-none transition-all text-center text-lg" placeholder="E-mail do Admin" required>
+                <input type="password" id="admin-password-input" class="w-full border-2 border-gray-200 p-3 rounded-md focus:border-gray-900 outline-none transition-all text-center text-lg" placeholder="Senha do Admin" required>
+                <button type="submit" id="btn-login" class="w-full bg-gray-900 text-white py-3 rounded-md font-bold hover:bg-black transition-all">ENTRAR</button>
+            </form>
+
+            <a href="index.html" class="block mt-8 text-sm text-gray-500 hover:text-gray-900 underline">Voltar para a Loja</a>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden min-h-screen lg:flex bg-[#f3f4f6]">
+        
+        <aside id="admin-sidebar" class="w-64 bg-[#111827] text-gray-400 flex flex-col fixed h-screen top-0 left-0 z-50 transition-transform duration-300 -translate-x-full lg:translate-x-0 lg:static lg:h-auto">
+        <div class="p-6 h-20 flex items-center border-b border-gray-800">
+                <span class="text-white font-bold text-lg tracking-tight flex items-center gap-3"><div class="w-2 h-6 bg-accent rounded-full"></div> Queen By</span>
+            </div>
+            <nav class="flex-1 p-6 flex flex-col gap-3">
+                <button onclick="switchTab('overview')" id="nav-overview" class="nav-item nav-active"><div class="flex items-center gap-3"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Visão Geral</span></div></button>
+                <button onclick="switchTab('products')" id="nav-products" class="nav-item"><div class="flex items-center gap-3"><i data-lucide="package" class="w-5 h-5"></i><span>Produtos</span></div></button>
+                
+                <button onclick="switchTab('orders')" id="nav-orders" class="nav-item">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                        <span>Pedidos</span>
+                        <span id="badge-new" class="bg-accent text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">NOVO</span>
+                    </div>
+                </button>
+
+            </nav>
+            <div class="p-6 border-t border-gray-800"><button onclick="logout()" class="nav-item text-red-400 hover:bg-red-900/20 hover:text-red-300 justify-start"><div class="flex items-center gap-3"><i data-lucide="log-out" class="w-5 h-5"></i><span>Sair</span></div></button></div>
+        </aside>
+
+        <main class="w-full bg-gray-100 p-6 md:p-10 pt-20 lg:pt-10">
+        <div id="tab-overview" class="max-w-6xl mx-auto space-y-8 fade-in">
+                <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><p class="text-sm font-medium text-gray-500 mb-1">Faturamento</p><h3 class="text-3xl font-bold text-gray-900" id="stat-revenue">R$ 0,00</h3></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><p class="text-sm font-medium text-gray-500 mb-1">Vendas</p><h3 class="text-3xl font-bold text-gray-900" id="stat-orders">0</h3></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-amber-500"><p class="text-sm font-bold text-amber-600 mb-1">Pendentes</p><h3 class="text-3xl font-bold text-amber-600" id="stat-pending">0</h3></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><p class="text-sm font-medium text-red-600 mb-1">Estoque Baixo</p><h3 class="text-3xl font-bold text-red-600" id="stat-low">0</h3></div>
+                </div>
+            </div>
+
+            <div id="tab-products" class="hidden max-w-6xl mx-auto space-y-8 fade-in">
+                <header class="flex justify-between items-center"><h2 class="text-2xl font-bold text-gray-800">Produtos</h2><button onclick="toggleProductForm()" class="bg-gray-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-black transition-all flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> Novo Produto</button></header>
+                <div id="product-form-container" class="hidden bg-white p-8 rounded-xl shadow-md border border-gray-200 mb-8">
+                    <form onsubmit="handleAddProduct(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input id="prod-name" class="admin-input" placeholder="Nome do Produto" required>
+                        <input id="prod-price" type="number" step="0.01" class="admin-input" placeholder="Preço (R$)" required>
+                        <input id="prod-stock" type="number" class="admin-input" placeholder="Estoque Inicial" required>
+                        <select id="prod-cat" class="admin-input bg-white"><option value="moda">Moda</option><option value="cosmeticos">Cosméticos</option></select>
+                        <input id="prod-img" type="url" class="admin-input md:col-span-2" placeholder="URL da Imagem" required>
+                        <textarea id="prod-desc" class="admin-input md:col-span-2" placeholder="Descrição do Produto" rows="4"></textarea>
+                        <div class="md:col-span-2 flex justify-end gap-4 pt-4">
+                            <button type="button" onclick="toggleProductForm()" class="px-6 py-3 font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                            <button type="submit" id="btn-save-prod" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition-all">Salvar Produto</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="products-list" class="space-y-4"></div>
+            </div>
+
+            <div id="tab-orders" class="hidden max-w-6xl mx-auto space-y-8 fade-in">
+                <header><h2 class="text-2xl font-bold text-gray-800">Pedidos</h2></header>
+                <div id="orders-list" class="space-y-4"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6 fade-in">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50"><h3 class="font-bold text-xl text-gray-900" id="modal-order-id"></h3><button onclick="closeOrderModal()" class="p-2 hover:bg-gray-200 rounded-full text-gray-500"><i data-lucide="x" class="w-6 h-6"></i></button></div>
+            <div class="p-6 max-h-[70vh] overflow-y-auto"><div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6"><h4 class="text-xs font-bold text-blue-800 uppercase tracking-widest mb-2 flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Endereço de Entrega</h4><p id="modal-address" class="font-medium text-gray-900"></p></div><div class="grid grid-cols-2 gap-6 mb-6"><div><h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Cliente</h4><p id="modal-customer" class="font-bold text-gray-900"></p><p id="modal-email" class="text-sm text-gray-500"></p></div><div><h4 class="text-xs font-bold text-gray-500 uppercase mb-1">Status Atual</h4><span id="modal-status" class="px-4 py-1 rounded-full text-sm font-bold inline-block"></span></div></div><h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Itens do Pedido</h4><div id="modal-items" class="space-y-3"></div></div>
+            <div class="p-6 bg-gray-50 border-t border-gray-100 flex justify-end"><button id="btn-mark-shipped" class="bg-blue-600 text-white px-6 py-2 rounded-md font-bold hover:bg-blue-700 transition-all flex items-center gap-2"><i data-lucide="truck" class="w-4 h-4"></i> Marcar como Enviado</button></div>
+        </div>
+    </div>
+
+    <div id="edit-product-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6 fade-in">
+        <div class="bg-white w-full max-w-xl rounded-xl shadow-2xl overflow-hidden">
+            <form onsubmit="handleEditProduct(event)">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-xl text-gray-900 flex items-center gap-3">
+                        <i data-lucide="edit-3" class="w-5 h-5 text-blue-600"></i>
+                        <span>Editar Produto</span>
+                    </h3>
+                    <button type="button" onclick="closeEditModal()" class="p-2 hover:bg-gray-200 rounded-full text-gray-500"><i data-lucide="x" class="w-6 h-6"></i></button>
+                </div>
+                <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                    <input type="hidden" id="edit-prod-id">
+                    <div>
+                        <label for="edit-prod-name" class="block text-sm font-medium text-gray-700 mb-2">Nome do Produto (Não editável)</label>
+                        <input id="edit-prod-name" class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg shadow-sm text-gray-500 cursor-not-allowed" readonly disabled>
+                    </div>
+                    <div>
+                        <label for="edit-prod-stock" class="block text-sm font-medium text-gray-700 mb-2">Estoque Disponível</label>
+                        <input id="edit-prod-stock" type="number" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Quantidade em estoque" required>
+                    </div>
+                    <div>
+                        <label for="edit-prod-image" class="block text-sm font-medium text-gray-700 mb-2">URL da Imagem</label>
+                        <input id="edit-prod-image" type="url" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="https://..." required>
+                    </div>
+                    <div>
+                        <label for="edit-prod-description" class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                        <textarea id="edit-prod-description" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg shadow-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" rows="5" placeholder="Descrição detalhada do produto..."></textarea>
+                    </div>
+                </div>
+                <div class="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-4">
+                    <button type="button" onclick="closeEditModal()" class="px-6 py-3 font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                    <button type="submit" id="btn-save-edit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-all">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6 fade-in">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50">
+                <i id="confirm-icon" data-lucide="alert-triangle" class="w-5 h-5 text-yellow-500"></i>
+                <h3 id="confirm-title" class="font-bold text-xl text-gray-900">Atenção</h3>
+            </div>
+            <div class="p-8">
+                <p id="confirm-body" class="text-gray-700 text-lg leading-relaxed">Você tem certeza?</p>
+            </div>
+            <div class="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-4">
+                <button type="button" onclick="closeConfirmModal()" class="px-6 py-3 font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                <button type="button" id="btn-confirm-action" class="text-white px-8 py-3 rounded-lg font-bold transition-all">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <style>
+        .nav-item { @apply flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-all w-full; }
+        .stat-card { @apply bg-white p-6 rounded-xl shadow-sm border border-gray-200; }
+        .admin-input { @apply w-full border-2 border-gray-200 p-3 rounded-md focus:border-gray-900 outline-none transition-all font-medium text-gray-700; }
+    </style>
+
+    <script>
+        const API = 'http://localhost:3001/api';
+        let authToken = localStorage.getItem('adminToken');
+        let allOrders = [];
+        let allProductsData = []; 
+
+        let pendingConfirmAction = null; 
+
+        function showConfirmModal(title, body, confirmText, confirmClass, icon, iconClass, onConfirm) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-body').innerText = body;
+            
+            const btn = document.getElementById('btn-confirm-action');
+            btn.innerText = confirmText;
+            btn.className = `text-white px-8 py-3 rounded-lg font-bold transition-all ${confirmClass}`;
+            
+            const iconEl = document.getElementById('confirm-icon');
+            iconEl.setAttribute('data-lucide', icon);
+            iconEl.className = `w-5 h-5 ${iconClass}`;
+            
+            pendingConfirmAction = onConfirm; 
+            btn.onclick = executeConfirmAction; 
+            
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            lucide.createIcons(); 
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            pendingConfirmAction = null; 
+        }
+
+        function executeConfirmAction() {
+            if (pendingConfirmAction) {
+                pendingConfirmAction(); 
+            }
+            closeConfirmModal(); 
+        }
+
+        // ===== INÍCIO DA MUDANÇA - FUNÇÕES DE RESPONSIVIDADE =====
+        function toggleSidebar() {
+            document.getElementById('admin-sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('admin-overlay').classList.toggle('hidden');
+        }
+
+        async function init() { 
+            if(authToken){
+                showDashboard();
+                loadData();
+            } 
+            lucide.createIcons(); 
+        }
+        // ===== FIM DA MUDANÇA =====
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('admin-email-input').value;
+            const password = document.getElementById('admin-password-input').value;
+            const btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            btn.innerText = 'ENTRANDO...';
+
+            try {
+                const res = await fetch(`${API}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    authToken = data.token; 
+                    localStorage.setItem('adminToken', authToken);
+                    showDashboard();
+                    loadData();
+                } else {
+                    throw new Error(data.error || 'Falha no login');
+                }
+            } catch (error) {
+                showToast(error.message);
+                btn.disabled = false;
+                btn.innerText = 'ENTRAR';
+            }
+        }
+        
+        // ===== INÍCIO DA MUDANÇA - FUNÇÕES DE NAVEGAÇÃO =====
+        function logout(){
+            toggleSidebar(); // Fecha o menu se estiver aberto no celular
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+        function showDashboard(){
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('flex'); // Garante que o layout flex seja aplicado
+        }
+        function switchTab(t){
+            ['overview','products','orders'].forEach(x=>document.getElementById(`tab-${x}`).classList.add('hidden'));
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('nav-active'));
+            document.getElementById(`nav-${t}`).classList.add('nav-active');
+            
+            // Fecha o menu automaticamente no celular
+            if (window.innerWidth < 1024) {
+                toggleSidebar();
+            }
+        }
+        // ===== FIM DA MUDANÇA =====
+        
+        async function loadData() { loadOverview(); loadProducts(); loadOrders(); }
+        
+        async function loadOverview(){
+            try {
+                const r = await fetch(`${API}/admin/dashboard`,{headers:{'Authorization': `Bearer ${authToken}`}});
+                if (!r.ok) { 
+                    let errorMsg = `Erro HTTP: ${r.status}`;
+                    try { const err = await r.json(); errorMsg = err.error || err.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+                const d = await r.json();
+                if (!d) { throw new Error('Resposta vazia do dashboard.'); }
+                
+                document.getElementById('stat-revenue').innerText=formatMoney(d.totalRevenue);
+                document.getElementById('stat-orders').innerText=d.totalOrders;
+                document.getElementById('stat-pending').innerText=d.pendingOrders;
+                document.getElementById('stat-low').innerText=d.lowStock;
+
+            } catch (err) {
+                console.error("Falha ao carregar overview:", err);
+                showToast(err.message || "Erro ao carregar dashboard.");
+                if (err.message.includes('401') || err.message.includes('inválido')) {
+                    logout();
+                }
+            }
+        }
+        
+        async function loadProducts(){
+            const r=await fetch(`${API}/products`);
+            const p=await r.json();
+            allProductsData = p; 
+            document.getElementById('products-list').innerHTML=p.map(i=>`
+                <div class="list-block group">
+                    <div class="flex items-center gap-6">
+                        <img src="${i.image}" class="w-16 h-16 rounded-lg object-cover bg-gray-100 border border-gray-200">
+                        <span class="font-bold text-gray-900 text-lg">${i.name}</span>
+                    </div>
+                    <div class="flex items-center gap-6"> 
+                         <button onclick="toggleHighlight(${i.id},${i.is_highlight})" class="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${i.is_highlight?'bg-amber-100 text-amber-700':'bg-gray-100 text-gray-400 hover:bg-gray-200'}">
+                            <i data-lucide="star" class="w-4 h-4 ${i.is_highlight?'fill-current':''}"></i> ${i.is_highlight?'Destaque':'Normal'}
+                        </button>
+                        <span class="font-medium text-gray-600 w-28 text-right">${formatMoney(i.price)}</span>
+                        <span class="font-bold ${i.stock<5?'text-red-600':'text-green-600'} w-20 text-center">${i.stock} un.</span>
+                        <button onclick="openEditModal(${i.id})" class="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Editar Produto">
+                            <i data-lucide="edit-3" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="delProd(${i.id})" class="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Excluir Produto">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+        async function toggleHighlight(id,s){
+            await fetch(`${API}/admin/products/${id}/highlight`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization': `Bearer ${authToken}`},body:JSON.stringify({is_highlight:!s})});
+            loadProducts();
+        }
+
+        async function loadOrders(){
+            try {
+                const r = await fetch(`${API}/admin/orders`,{headers:{'Authorization': `Bearer ${authToken}`}});
+                
+                if (!r.ok) {
+                    let errorMsg = `Erro HTTP: ${r.status}`;
+                    try { const err = await r.json(); errorMsg = err.error || err.message || errorMsg; } catch (e) {}
+                    throw new Error(errorMsg);
+                }
+
+                allOrders = await r.json();
+                
+                if (!Array.isArray(allOrders)) {
+                    if (allOrders && allOrders.error) { throw new Error(allOrders.error.message || 'Erro do Supabase'); }
+                    throw new Error('Resposta inesperada do servidor.');
+                }
+                
+                const pen=allOrders.filter(o=> (o.status || '').includes('Aguardando') || (o.status || '') === 'Pendente').length;
+                document.getElementById('badge-new').classList.toggle('hidden',pen===0);
+                
+                document.getElementById('orders-list').innerHTML=allOrders.map(o=>`
+                    <div class="list-block hover:border-gray-300">
+                        <div class="flex flex-col">
+                            <span class="font-mono text-xs text-gray-500 mb-1">#${String(o.id || '').slice(0,8)}</span>
+                            <span class="font-bold text-gray-900 text-lg">${o.customer_name || 'Cliente'}</span>
+                        </div>
+                        <div class="flex items-center gap-12">
+                            <span class="font-bold text-gray-900 text-xl">${formatMoney(o.total)}</span>
+                            <span class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest 
+                                ${ (o.status || '').includes('Aguardando') ? 'bg-amber-100 text-amber-700' 
+                                : (o.status || '') === 'Enviado' ? 'bg-blue-100 text-blue-700'
+                                : 'bg-green-100 text-green-700' }">
+                                ${o.status || 'Pendente'}
+                            </span>
+                            <div class="flex gap-2">
+                                <button onclick="openOrder('${o.id}')" class="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><i data-lucide="eye" class="w-5 h-5"></i></button>
+                                <button onclick="deleteOrder('${o.id}')" class="p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                            </div>
+                        </div>
+                    </div>`).join('');
+                
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Falha ao renderizar pedidos:", err);
+                showToast(err.message || "Erro ao carregar pedidos.");
+                if (err.message.includes('401') || err.message.includes('inválido')) {
+                    logout();
+                }
+            }
+        }
+
+        async function handleAddProduct(e){
+            e.preventDefault();
+            const body = {
+                name: document.getElementById('prod-name').value,
+                category: document.getElementById('prod-cat').value,
+                price: parseFloat(document.getElementById('prod-price').value),
+                stock: parseInt(document.getElementById('prod-stock').value),
+                image: document.getElementById('prod-img').value,
+                description: document.getElementById('prod-desc').value 
+            };
+            await fetch(`${API}/admin/products`,{method:'POST',headers:{'Content-Type':'application/json','Authorization': `Bearer ${authToken}`},body:JSON.stringify(body)});
+            showToast('Produto Cadastrado');
+            e.target.reset();
+            toggleProductForm();
+            loadProducts();
+        }
+
+        async function delProd(id){
+            showConfirmModal(
+                'Excluir Produto',
+                'Tem certeza que deseja excluir este produto permanentemente? Esta ação não pode ser desfeita.',
+                'Excluir',
+                'bg-red-600 hover:bg-red-700',
+                'trash-2',
+                'text-red-600',
+                async () => { 
+                    await fetch(`${API}/admin/products/${id}`,{method:'DELETE',headers:{'Authorization': `Bearer ${authToken}`}});
+                    loadProducts();
+                    showToast('Produto Removido');
+                }
+            );
+        }
+        
+        async function deleteOrder(id){
+            showConfirmModal(
+                'Excluir Pedido',
+                'ATENÇÃO: Tem certeza que deseja deletar este pedido permanentemente?',
+                'Excluir Pedido',
+                'bg-red-600 hover:bg-red-700',
+                'alert-triangle',
+                'text-red-600',
+                async () => { 
+                    await fetch(`${API}/admin/orders/${id}`,{method:'DELETE',headers:{'Authorization': `Bearer ${authToken}`}});
+                    loadOrders();
+                    loadOverview();
+                    showToast('Pedido Deletado');
+                }
+            );
+        }
+        
+        function openOrder(id){
+            const o=allOrders.find(x=>x.id == id);
+            
+            if (!o) {
+                console.error("Pedido não encontrado com ID:", id);
+                return; 
+            }
+            
+            document.getElementById('modal-order-id').innerText=`Pedido #${o.id}`;
+            document.getElementById('modal-customer').innerText=o.customer_name || 'Cliente';
+            document.getElementById('modal-email').innerText=o.customer_email || 'E-mail não informado';
+            document.getElementById('modal-address').innerText=o.shipping_address||'Endereço não registrado.';
+            
+            const status = o.status || 'Pendente';
+            document.getElementById('modal-status').innerText = status;
+            document.getElementById('modal-status').className=`px-4 py-1 rounded-full text-sm font-bold inline-block ${status.includes('Aguardando')?'bg-amber-100 text-amber-700':status==='Enviado'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`;
+            
+            document.getElementById('modal-items').innerHTML=(o.items || []).map(i=>`<div class="flex items-center gap-4 p-3 bg-gray-50 border border-gray-200 rounded-lg"><img src="${i.image}" class="w-12 h-12 object-cover rounded-md border border-gray-200 bg-white"><div class="flex-1"><p class="font-bold text-gray-900">${i.name}</p><p class="text-sm text-gray-500">${i.quantity}x</p></div><p class="font-medium">${formatMoney(i.price*i.quantity)}</p></div>`).join('');
+            
+            const b=document.getElementById('btn-mark-shipped');
+            if(status==='Enviado'){
+                b.classList.add('hidden');
+            } else {
+                b.classList.remove('hidden');
+                b.onclick=()=>updateStatus(o.id,'Enviado');
+            }
+            
+            document.getElementById('order-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        
+        async function updateStatus(id,s){
+            showConfirmModal(
+                `Atualizar Status`,
+                `Tem certeza que deseja marcar este pedido como "${s}"?`,
+                'Confirmar',
+                'bg-blue-600 hover:bg-blue-700',
+                'truck',
+                'text-blue-600',
+                async () => { 
+                    await fetch(`${API}/admin/orders/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json','Authorization': `Bearer ${authToken}`},body:JSON.stringify({status:s})});
+                    closeOrderModal();
+                    loadData();
+                    showToast('Status Atualizado');
+                }
+            );
+        }
+        
+        function toggleProductForm(){document.getElementById('product-form-container').classList.toggle('hidden')}
+        function closeOrderModal(){document.getElementById('order-modal').classList.add('hidden')}
+        
+        function openEditModal(id) {
+            const product = allProductsData.find(p => p.id === id);
+            if (!product) return;
+            document.getElementById('edit-prod-id').value = product.id;
+            document.getElementById('edit-prod-name').value = product.name; 
+            document.getElementById('edit-prod-stock').value = product.stock;
+            document.getElementById('edit-prod-image').value = product.image;
+            document.getElementById('edit-prod-description').value = product.description || ''; 
+            document.getElementById('edit-product-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-product-modal').classList.add('hidden');
+        }
+
+        async function handleEditProduct(event) {
+            event.preventDefault();
+            const id = document.getElementById('edit-prod-id').value;
+            const body = {
+                stock: parseInt(document.getElementById('edit-prod-stock').value),
+                image: document.getElementById('edit-prod-image').value,
+                description: document.getElementById('edit-prod-description').value
+            };
+            const btn = document.getElementById('btn-save-edit');
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+            try {
+                const res = await fetch(`${API}/admin/products/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Falha ao atualizar');
+                }
+                showToast('Produto atualizado com sucesso!');
+                closeEditModal();
+                loadProducts(); 
+            } catch (error) {
+                showToast('Erro ao salvar: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Salvar Alterações';
+            }
+        }
+
+        function formatMoney(v){return (v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+        
+        function showToast(m){
+            const el=document.getElementById('toast');
+            el.innerText=m;
+            el.classList.remove('translate-x-full','opacity-0');
+            setTimeout(()=>el.classList.add('translate-x-full','opacity-0'), 2500); 
+        }
+        
+        document.addEventListener('DOMContentLoaded',init);
+    </script>
+</body>
+</html>
